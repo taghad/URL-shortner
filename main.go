@@ -21,18 +21,28 @@ func getURL() string {
 //this is for check genrated short url is exist or not
 func ifexistShorturl(shorturl string) bool {
 	stQuery := "SELECT shorturl from urls where shorturl =" + "'" + shorturl + "'"
-	_, err := db.Query(stQuery)
+	res, err := db.Query(stQuery)
 	if err != nil {
 		fmt.Println(err)
-		return true
 	}
+	for res.Next() {
+		res.Scan(&shorturl)
+		fmt.Println(shorturl)
+	}
+	//we have bug here
+	///we have problem here to know result of query is emty or not
+	if shorturl == "" {
 
-	return false
+		//fmt.Println("voojood nadarad")
+		return false
+	}
+	//fmt.Println("voojood darad")
+	return true
 }
 
 //create shortURL
 func createshorturl(id int) string {
-	if ifexistShorturl("taghad.gogo/" + strconv.Itoa(id)) {
+	if !ifexistShorturl("taghad.gogo/" + strconv.Itoa(297)) {
 		return "taghad.gogo/" + strconv.Itoa(id)
 	}
 	return createshorturl(rand.Int())
@@ -42,15 +52,20 @@ func createshorturl(id int) string {
 //data base func :
 //first func : create data base & table
 func createdb() *sql.DB {
-	database, _ := sql.Open("sqlite3", "./data.db")
-	statement, _ := database.Prepare("CREATE TABLE IF NOT EXISTS urls(id INTEGER PRIMARY KEY , url varchar , shorturl varchar,expiretime date, redircount INTEGER )")
-	statement.Exec()
-	statement, err := database.Prepare("INSERT INTO URLs (url, shorturl, redircount) VALUES (?, ?, ?)")
+	db, errorOpen := sql.Open("sqlite3", "./data.db")
+	if errorOpen != nil {
+		fmt.Println(errorOpen)
+	}
+	statement, err := db.Prepare("CREATE TABLE IF NOT EXISTS urls(id INTEGER PRIMARY KEY , url text , shorturl text, redircount INTEGER )")
+	if err != nil {
+		fmt.Println(err)
+	}
+	_, err = statement.Exec()
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	return database
+	return db
 
 }
 
@@ -60,6 +75,7 @@ func insertdb(shorturl string, inurl string) string {
 	//if exist don't insert it
 	stQuery := "SELECT shorturl from urls where url =" + "'" + inurl + "'"
 	statement, err := db.Query(stQuery)
+	///we have problem here to know result of query is emty or not
 	if err != nil {
 		fmt.Println(err)
 	} else {
@@ -75,12 +91,17 @@ func insertdb(shorturl string, inurl string) string {
 
 	fmt.Println(err)
 	res = shorturl
-	st, error := db.Prepare("insert into urls (url, shorturl,expiretime, redircount) values (?,?, DATEADD(min ,30, current_date), ?)")
-	st.Exec(inurl, res, 0)
+	st, error := db.Prepare("insert into urls (url, shorturl, redircount) values (?,?,?)")
 
 	if error != nil {
 		fmt.Println(error)
 	}
+	_, error = st.Exec(inurl, res, 0)
+
+	if error != nil {
+		fmt.Println(error)
+	}
+
 	return res
 }
 
@@ -101,7 +122,7 @@ func insWithCusShorturl(custshort string, inurl string) bool {
 }
 
 func main() {
-	for true {
+	{
 		fmt.Println("1: give shorturl \n2: redirect with shorturl \n3: set short url for your link")
 		var state int
 		fmt.Scanf("%d", &state)
