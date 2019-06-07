@@ -3,8 +3,9 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
 	"strconv"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var db sql.DB
@@ -30,6 +31,17 @@ func createdb() *sql.DB {
 	database, _ := sql.Open("sqlite3", "./data.db")
 	statement, _ := database.Prepare("CREATE TABLE IF NOT EXISTS urls(id INTEGER PRIMARY KEY , url varchar , shorturl varchar , redircount INTEGER )")
 	statement.Exec()
+	statement, err := database.Prepare("INSERT INTO URLs (url, shorturl, redircount) VALUES (?, ?, ?)")
+	if err != nil {
+		fmt.Println(err)
+	}
+	//statement.Exec("gogo.com", "go.com", 0)
+	//st, _ := database.Query("select shorturl from urls")
+	//var shr string
+	//for st.Next() {
+	//	st.Scan(&shr)
+	//	fmt.Println(shr)
+	//}
 	return database
 
 }
@@ -37,24 +49,26 @@ func createdb() *sql.DB {
 //second func : insert to data base if is not exist
 func insertdb(id int, inurl string) string {
 	var res string
-	sqlQuery := "SELECT shorturl FROM urls WHERE url =" + inurl + ""
-	err := db.QueryRow(sqlQuery).Scan(&res)
-	fmt.Println(res)
-	//}
+	stQuery := "SELECT shorturl from urls where url =" + "'" + inurl + "'"
+	statement, err := db.Query(stQuery)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		for statement.Next() {
+			scanerr := statement.Scan(&res)
+			if scanerr != nil {
+				fmt.Println(scanerr)
+			}
+			fmt.Println(res)
+		}
+	}
 	if err != nil {
 		fmt.Println("has no same url")
 		res = createshorturl(id)
-		sqlQuery = "INSERT INTO urls (id, url, shorturl, redircount) values (" + strconv.Itoa(id) + "," + inurl + "," + res + "0)"
-		//st, error := db.Prepare("INSERT INTO urls (url, shorturl, redirvount) values (?, ?, ?)")
-		//st.Exec(inurl, res, 0)
-		st, error := db.Prepare(sqlQuery)
+		st, error := db.Prepare("insert into urls (id,url, shorturl, redircount) values (?,?, ?, ?)")
+		st.Exec(id, inurl, res, 0)
 		if error != nil {
-			panic(error)
-		}
-		st.Exec()
-
-		if error != nil {
-			println("injaaaaaaaaaaa")
+			fmt.Println(error)
 		}
 
 	}
@@ -65,7 +79,7 @@ func insertdb(id int, inurl string) string {
 func main() {
 	inurl := getURL()
 	db = *createdb()
-	shorturl := insertdb(1000, inurl)
+	shorturl := insertdb(10, inurl)
 	fmt.Println(shorturl)
 	createdb()
 
