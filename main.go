@@ -13,6 +13,7 @@ import (
 
 var db sql.DB
 
+//going to get shorturl & redirect to url
 func redirect(w http.ResponseWriter, r *http.Request) {
 	s := r.URL.Path
 	st, err := db.Query("select url from urls where shorturl = ?", s)
