@@ -16,7 +16,8 @@ var db sql.DB
 //going to get shorturl & redirect to url
 func redirect(w http.ResponseWriter, r *http.Request) {
 	s := r.URL.Path
-	st, err := db.Query("select url from urls where shorturl = ?", s)
+	println("url :", s)
+	st, err := db.Query("select url from urls where shorturl = ?", "http://localhost:8161"+s)
 	var res string
 	if err != nil {
 		fmt.Println(err)
@@ -63,8 +64,8 @@ func ifexistShorturl(shorturl string) bool {
 
 //create shortURL
 func createshorturl(id int) string {
-	if !ifexistShorturl("/taghad.gogo/" + strconv.Itoa(id)) {
-		return "/taghad.gogo/" + strconv.Itoa(id)
+	if !ifexistShorturl("http://localhost:8161/" + strconv.Itoa(id)) {
+		return "http://localhost:8161/" + strconv.Itoa(id)
 	}
 	return createshorturl(rand.Int())
 
@@ -154,8 +155,8 @@ func main() {
 			fmt.Println(shorturl)
 			break
 		case 2:
-			http.HandleFunc("/", redirect)
-			err := http.ListenAndServe(":9060", nil)
+			http.HandleFunc("/5577006791947779410", redirect)
+			err := http.ListenAndServe(":8161", nil)
 			if err != nil {
 				log.Fatal("ListenAndServe: ", err)
 			}
