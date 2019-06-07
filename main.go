@@ -7,6 +7,8 @@ import (
 	"strconv"
 )
 
+var db sql.DB
+
 //scan URL
 func getURL() string {
 	var inurl string
@@ -26,50 +28,45 @@ func createshorturl(id int) string {
 //daghoonesh kardam ke ye insert dorost dashte basham
 func createdb() *sql.DB {
 	database, _ := sql.Open("sqlite3", "./data.db")
-	statement, _ := database.Prepare("CREATE TABLE IF NOT EXISTS urls(id INTEGER PRIMARY KEY , url TEXT, shorturl TEXT, redircount INTEGER )")
+	statement, _ := database.Prepare("CREATE TABLE IF NOT EXISTS urls(id INTEGER PRIMARY KEY , url varchar , shorturl varchar , redircount INTEGER )")
 	statement.Exec()
-	statement, _ = database.Prepare("INSERT INTO URLs (url, shorturl, redirvount) VALUES (?, ?, ?)")
-	statement.Exec("gogo.com", "go.com", 0)
-	st, _ := database.Query("select shorturl from urls")
-	var shr string
-	for st.Next() {
-		st.Scan(&shr)
-		fmt.Println(shr)
-	}
 	return database
 
 }
 
 //second func : insert to data base if is not exist
-func insertdb(id int, inurl string, db *sql.DB) string {
+func insertdb(id int, inurl string) string {
 	var res string
-	var id2 int
-
-	statement, err := db.Query("SELECT id from URLs")
-
-	statement.Scan(&id2)
-	fmt.Println(id2)
+	sqlQuery := "SELECT shorturl FROM urls WHERE url =" + inurl + ""
+	err := db.QueryRow(sqlQuery).Scan(&res)
+	fmt.Println(res)
 	//}
-	if err == sql.ErrNoRows {
+	if err != nil {
 		fmt.Println("has no same url")
 		res = createshorturl(id)
-		st, error := db.Prepare("insert into URLs (url, shorturl, redirvount) values (?, ?, ?)")
-		st.Exec(inurl, res, 0)
+		sqlQuery = "INSERT INTO urls (id, url, shorturl, redircount) values (" + strconv.Itoa(id) + "," + inurl + "," + res + "0)"
+		//st, error := db.Prepare("INSERT INTO urls (url, shorturl, redirvount) values (?, ?, ?)")
+		//st.Exec(inurl, res, 0)
+		st, error := db.Prepare(sqlQuery)
+		if error != nil {
+			panic(error)
+		}
+		st.Exec()
+
 		if error != nil {
 			println("injaaaaaaaaaaa")
 		}
-		//	return res
+
 	}
 
-	//println(res)
-	return strconv.Itoa(id2)
+	return res
 }
 
 func main() {
-	//inurl := getURL()
-	//db := createdb()
-	//shorturl := insertdb(1000, inurl, db)
-	//fmt.Println(shorturl)
+	inurl := getURL()
+	db = *createdb()
+	shorturl := insertdb(1000, inurl)
+	fmt.Println(shorturl)
 	createdb()
 
 }
