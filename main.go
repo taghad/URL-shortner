@@ -43,7 +43,7 @@ func createshorturl(id int) string {
 //first func : create data base & table
 func createdb() *sql.DB {
 	database, _ := sql.Open("sqlite3", "./data.db")
-	statement, _ := database.Prepare("CREATE TABLE IF NOT EXISTS urls(id INTEGER PRIMARY KEY , url varchar , shorturl varchar , redircount INTEGER )")
+	statement, _ := database.Prepare("CREATE TABLE IF NOT EXISTS urls(id INTEGER PRIMARY KEY , url varchar , shorturl varchar,expiretime date, redircount INTEGER )")
 	statement.Exec()
 	statement, err := database.Prepare("INSERT INTO URLs (url, shorturl, redircount) VALUES (?, ?, ?)")
 	if err != nil {
@@ -75,7 +75,7 @@ func insertdb(shorturl string, inurl string) string {
 
 	fmt.Println(err)
 	res = shorturl
-	st, error := db.Prepare("insert into urls (url, shorturl, redircount) values (?, ?, ?)")
+	st, error := db.Prepare("insert into urls (url, shorturl,expiretime, redircount) values (?,?, DATEADD(min ,30, current_date), ?)")
 	st.Exec(inurl, res, 0)
 
 	if error != nil {
