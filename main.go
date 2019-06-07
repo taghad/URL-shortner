@@ -3,11 +3,16 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"math/rand"
-	"strconv"
-
 	_ "github.com/mattn/go-sqlite3"
+	"log"
+	"math/rand"
+	"net/http"
+	"strconv"
 )
+
+func redirect(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "http://www.google.com", 301)
+}
 
 var db sql.DB
 
@@ -122,8 +127,10 @@ func insWithCusShorturl(custshort string, inurl string) bool {
 }
 
 func main() {
+
+	//i comented this part foe learning restful api
 	{
-		fmt.Println("1: give shorturl \n2: redirect with shorturl \n3: set short url for your link")
+		/*fmt.Println("1: give shorturl \n2: redirect with shorturl \n3: set short url for your link")
 		var state int
 		fmt.Scanf("%d", &state)
 		switch state {
@@ -134,12 +141,24 @@ func main() {
 			fmt.Println(shorturl)
 			break
 		case 2:
-			//nothing now
+			var shorturl string
+			fmt.Scan(&shorturl)
+			fmt.Println(shorturl)
+			http.HandleFunc("/gogo", redirect)
+			err := http.ListenAndServe(":9090", nil)
+			if err != nil {
+				log.Fatal("ListenAndServe: ", err)
+			}
 			break
 		case 3:
 			inurl := getURL()
 			db = *createdb()
 			insWithCusShorturl(getURL(), inurl)
+		}*/
+		http.HandleFunc("/", redirect)
+		err := http.ListenAndServe(":9090", nil)
+		if err != nil {
+			log.Fatal("ListenAndServe: ", err)
 		}
 
 	}
