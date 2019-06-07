@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"math/rand"
 	"strconv"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -17,16 +18,29 @@ func getURL() string {
 	return inurl
 }
 
+//this is for check genrated short url is exist or not
+func ifexistShorturl(shorturl string) bool {
+	stQuery := "SELECT shorturl from urls where shorturl =" + "'" + shorturl + "'"
+	_, err := db.Query(stQuery)
+	if err != nil {
+		fmt.Println(err)
+		return true
+	}
+
+	return false
+}
+
 //create shortURL
 func createshorturl(id int) string {
-	return "taghad.gogo/" + strconv.Itoa(id)
+	if ifexistShorturl("taghad.gogo/" + strconv.Itoa(id)) {
+		return "taghad.gogo/" + strconv.Itoa(id)
+	}
+	return createshorturl(rand.Int())
 
 }
 
 //data base func :
 //first func : create data base & table
-//now this is not good func
-//daghoonesh kardam ke ye insert dorost dashte basham
 func createdb() *sql.DB {
 	database, _ := sql.Open("sqlite3", "./data.db")
 	statement, _ := database.Prepare("CREATE TABLE IF NOT EXISTS urls(id INTEGER PRIMARY KEY , url varchar , shorturl varchar , redircount INTEGER )")
@@ -35,20 +49,15 @@ func createdb() *sql.DB {
 	if err != nil {
 		fmt.Println(err)
 	}
-	//statement.Exec("gogo.com", "go.com", 0)
-	//st, _ := database.Query("select shorturl from urls")
-	//var shr string
-	//for st.Next() {
-	//	st.Scan(&shr)
-	//	fmt.Println(shr)
-	//}
+
 	return database
 
 }
 
-//second func : insert to data base if is not exist
-func insertdb(id int, inurl string) string {
+//second func : insert to data base & return shorturl
+func insertdb(shorturl string, inurl string) string {
 	var res string
+	//if exist don't insert it
 	stQuery := "SELECT shorturl from urls where url =" + "'" + inurl + "'"
 	statement, err := db.Query(stQuery)
 	if err != nil {
@@ -59,28 +68,59 @@ func insertdb(id int, inurl string) string {
 			if scanerr != nil {
 				fmt.Println(scanerr)
 			}
-			fmt.Println(res)
+			return res
 		}
 	}
-	if err != nil {
-		fmt.Println("has no same url")
-		res = createshorturl(id)
-		st, error := db.Prepare("insert into urls (id,url, shorturl, redircount) values (?,?, ?, ?)")
-		st.Exec(id, inurl, res, 0)
-		if error != nil {
-			fmt.Println(error)
-		}
+	//if not exist so insert
 
+	fmt.Println(err)
+	res = shorturl
+	st, error := db.Prepare("insert into urls (url, shorturl, redircount) values (?, ?, ?)")
+	st.Exec(inurl, res, 0)
+
+	if error != nil {
+		fmt.Println(error)
 	}
-
 	return res
 }
 
+//third func : insert with custom shorturl
+func insWithCusShorturl(custshort string, inurl string) bool {
+	stQuery := "SELECT shorturl from urls where shorturl =" + "'" + custshort + "'"
+	_, err := db.Query(stQuery)
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println("you can't do this")
+		fmt.Println(insertdb(createshorturl(rand.Int()), inurl))
+		return false
+	} else {
+		fmt.Println(insertdb(custshort, inurl))
+		return true
+	}
+
+}
+
 func main() {
-	inurl := getURL()
-	db = *createdb()
-	shorturl := insertdb(10, inurl)
-	fmt.Println(shorturl)
-	createdb()
+	for true {
+		fmt.Println("1: give shorturl \n2: redirect with shorturl \n3: set short url for your link")
+		var state int
+		fmt.Scanf("%d", &state)
+		switch state {
+		case 1:
+			inurl := getURL()
+			db = *createdb()
+			shorturl := insertdb(createshorturl(rand.Int()), inurl)
+			fmt.Println(shorturl)
+			break
+		case 2:
+			//nothing now
+			break
+		case 3:
+			inurl := getURL()
+			db = *createdb()
+			insWithCusShorturl(getURL(), inurl)
+		}
+
+	}
 
 }
